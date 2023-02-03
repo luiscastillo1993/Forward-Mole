@@ -29,12 +29,12 @@ from osgeo import ogr, osr
 import matplotlib.pyplot as plt
 
 # --- Reading the required data --- #
-path = "D:/Google_drive/Meu Drive/Papers/Paper - 2Dmodeling + level calibration/Basins_SP/591/main.csv"  # Reading the Data
-path2 = "D:/Google_drive/Meu Drive/Papers/Paper - 2Dmodeling + level calibration/Basins_SP/591/"
+path = "D:/Google_drive/Meu Drive/Papers/Paper - 2Dmodeling + level calibration/Basins_SP/591/main.csv"  # Reading the Data, Check the path
+path2 = "D:/Google_drive/Meu Drive/Papers/Paper - 2Dmodeling + level calibration/Basins_SP/591/"  # Check the path
 channel = pd.read_csv(path)
-channel = np.asarray(channel.sort_values(['lineid','row','newid'], ascending = [True, False, True]))  #Reordening the data acording LineID, Row and NewID
+channel = np.asarray(channel.sort_values(['lineid','row','newid'], ascending = [True, False, True]))  # Reordening the data
 channel2 = channel.copy()
-res = 10  # In meters
+res = 10  # Resolution in meters
 SRC = "EPSG:31983"  # Check your SRC
 
 # --- Main loop --- #
