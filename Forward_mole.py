@@ -28,13 +28,14 @@ import pandas as pd
 from osgeo import ogr, osr
 import matplotlib.pyplot as plt
 
+
 # --- Reading the required data --- #
-path = "D:/Google_drive/Meu Drive/Papers/Paper - 2Dmodeling + level calibration/Basins_SP/591/main.csv"  # Reading the Data, Check the path
-path2 = "D:/Google_drive/Meu Drive/Papers/Paper - 2Dmodeling + level calibration/Basins_SP/591/"  # Check the path
+path = "D:/Google_drive/Meu Drive/Papers/Paper - Sao_carlos/main_150.csv"  # Reading the Data
+path2 = "D:/Google_drive/Meu Drive/Papers/Paper - Sao_carlos/"
 channel = pd.read_csv(path)
-channel = np.asarray(channel.sort_values(['lineid','row','newid'], ascending = [True, False, True]))  # Reordening the data
+channel = np.asarray(channel.sort_values(['lineid','row','newid'], ascending = [True, False, True]))  #Reordening the data acording LineID, Row and NewID
 channel2 = channel.copy()
-res = 10  # Resolution in meters
+res = 30  # In meters
 SRC = "EPSG:31983"  # Check your SRC
 
 # --- Main loop --- #
@@ -44,8 +45,8 @@ def hypo(i2, m):  # Calculated distance between two points
     return ((channel[i2, 8] - channel[m, 8]) ** 2 + (channel[i2, 7] - channel[m, 7]) ** 2) ** (1 / 2)
 
 def forward(i, j, record):
-    flag, flag_1 = 0, 0
-    while hypo(i, j) < res*2:  # Check if are cells neighborhoods
+    flag, flag_1, flag_k = 0, 0, 0
+    while hypo(i, j) < np.sqrt(res**2 + (res*2)**2):  # Check if are cells neighborhoods
         if flag == 1:
             break
         if channel[i, 6] < channel[j, 6]:  # Check if downstream is higher than upstream cell
@@ -56,27 +57,53 @@ def forward(i, j, record):
                     flag = 1
                     break
                 k.append(i2)
-                if hypo(i2 - 1, i2) > res * 2:  # Check if are cells neighborhoods
-                    i_f, j_f = i2, i2 + 1
-                    m = i2  #
-                    while m < len(channel):
-                        if m == len(channel):
-                            break
-                        if (hypo(i2-1, m) < res *2) and (channel[m,4] != 1):  # Check if are cells neighborhoods
-                            break
-                        m += 1
-                    i2 = m
-                    k[-1] = i2
-                    dist.append(dist[-1] + hypo(k[-1]-1, k[-1]))
-                    while channel[i, 6] <= channel[i2, 6]:  # Check if downstream is higher than upstream cell
-                        i2 += 1
-                        k.append(i2)
-                        dist.append(dist[-1] + hypo(k[-1] - 1, k[-1]))
-                    channel[k, 6] = channel[i, 6] - ((channel[i, 6] - channel[i2, 6]) * np.asarray(dist[1:])) / (dist[-1])
-                    flag_1 = 1
+                if hypo(i2 - 1, i2) > np.sqrt(res**2 + (res*2)**2):  # Check if are not cells neighborhoods
+                    if flag_k == 0:
+                        i_f, j_f = i2, i2 + 1
+                        m = i2  #
+                        while m < len(channel):
+                            if m == len(channel):
+                                break
+                            if (hypo(i2-1, m) <= np.sqrt(res**2 + (res*2)**2)) and (channel[m,4] != 1):  # Check if are cells neighborhoods
+                                break
+                            m += 1
+                            if m == len(channel):
+                                m = int(np.argwhere(channel[:, 0] > 1)[0])
+                        i2 = m
+                        k[-1] = i2
+                        dist.append(dist[-1] + hypo(k[-2], k[-1]))
+                        while (channel[i, 6] <= channel[i2, 6]) and (hypo(k[-2],k[-1])<= np.sqrt(res**2 + (res*2)**2)):  # Check if downstream is higher than upstream cell
+                            i2 += 1
+                            k.append(i2)
+                            dist.append(dist[-1] + hypo(k[-2], k[-1]))
+                        channel[k, 6] = channel[i, 6] - ((channel[i, 6] - channel[i2, 6]) * np.asarray(dist[1:])) / (dist[-1])
+                        flag_k = 1
+                        flag_1 = 1
+                    else:
+                        while hypo(k[-2], k[-1]) > np.sqrt(res**2 + (res*2)**2):
+                            i_f, j_f = i2, i2 + 1
+                            m = i2  #
+                            while m < len(channel):
+                                if m == len(channel):
+                                    break
+                                if (hypo(i2-1, m) <= np.sqrt(res**2 + (res*2)**2)) and (channel[m,4] != 1):  # Check if are cells neighborhoods
+                                    break
+                                m += 1
+                                if m == len(channel):
+                                    m = int(np.argwhere(channel[:, 0] > 1)[0])
+                            i2 = m
+                            k[-1] = i2
+                            dist.append(dist[-1] + hypo(k[-2], k[-1]))
+                            while (channel[i, 6] <= channel[i2, 6]) and (hypo(k[-2],k[-1])<= np.sqrt(res**2 + (res*2)**2)):  # Check if downstream is higher than upstream cell
+                                i2 += 1
+                                k.append(i2)
+                                dist.append(dist[-1] + hypo(k[-2], k[-1]))
+                            channel[k, 6] = channel[i, 6] - ((channel[i, 6] - channel[i2, 6]) * np.asarray(dist[1:])) / (dist[-1])
+                            flag_k = 1
+                            flag_1 = 1
                 elif channel[i, 6] >= channel[i2, 6]:
                     i_f, j_f = i2, i2 + 1
-                    dist.append(dist[-1] + hypo(k[-1]-1, k[-1]))
+                    dist.append(dist[-1] + hypo(k[-2], k[-1]))
                     channel[k, 6] = channel[i, 6] - ((channel[i, 6] - channel[i2, 6]) * np.asarray(dist[1:])) / (dist[-1])
                     i = i2
                     j = i2 + 1
@@ -91,7 +118,11 @@ def forward(i, j, record):
         else:
             i += 1
             j += 1
-            if hypo(i, j) > res * 2:  # Check if are neighborhoods
+            if j == len(channel):
+                i -=1
+                j -=1
+                break
+            if hypo(i, j) > np.sqrt(res**2 + (res*2)**2):  # Check if are neighborhoods
                 i_f, j_f = i + 1, j + 1
     i_f, j_f = i + 1, j + 1
     return i_f, j_f
@@ -116,13 +147,13 @@ fig.show()
 # --- exporting the raster --- #
 output = np.column_stack((channel[:, [7, 8, 6]])).T
 df1 = pd.DataFrame(output)
-df1.to_csv(path2+'main_channel_ajusted.csv', index=False)
+df1.to_csv(path2+'main_channel_ajusted_150.csv', index=False)
 
 df1 = df1.sort_values(by = [1, 0], ascending = [False, True])
-df1.to_csv(path2+'channel_ajusted.xyz', index=False, header=None, sep=" ")
+df1.to_csv(path2+'channel_ajusted_150.xyz', index=False, header=None, sep=" ")
 
-dem_1 = gdal.Translate(path2+"main_channel_ajusted.tif",
-                       path2+"channel_ajusted.xyz",
+dem_1 = gdal.Translate(path2+"main_channel_ajusted_150.tif",
+                       path2+"channel_ajusted_150.xyz",
                        outputSRS=SRC)
 dem_1 = None
 
