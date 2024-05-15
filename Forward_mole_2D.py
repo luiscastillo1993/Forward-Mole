@@ -514,17 +514,17 @@ for stra in range(1, int(np.max(main[:,2]))+1):
 
                     #######################################################################################################
 
-                    if j == 39 and flag_once == 0:
-                        x_ = np.array((0))
-                        y_ = np.array((0))
-                        # plt.scatter(temp_w[refs, 0], temp_w[refs, 1])
-                        # plt.show()
-                        # plt.close()
-                        to_plot = dem_o
-                        to_plot[dem_o < 0] = np.nan
-                    if j == 39 and j < 41:
-                        if k >0:
-                            plt.scatter(temp_w[refs, 0], temp_w[refs, 1], s=2)
+                    # if j == 39 and flag_once == 0:
+                    #     x_ = np.array((0))
+                    #     y_ = np.array((0))
+                    #     # plt.scatter(temp_w[refs, 0], temp_w[refs, 1])
+                    #     # plt.show()
+                    #     # plt.close()
+                    #     to_plot = dem_o
+                    #     to_plot[dem_o < 0] = np.nan
+                    # if j == 39 and j < 41:
+                    #     if k >0:
+                    #         plt.scatter(temp_w[refs, 0], temp_w[refs, 1], s=2)
                             # plt.show()
                     # if j >41:
                     #     zzz = 1
